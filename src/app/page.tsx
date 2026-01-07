@@ -12,7 +12,7 @@ export default function Home() {
                     </h1>
                 </div>
                 <p className="text-secondary text-lg mb-8">
-                    Sistema de Organización Premium
+                    Sistema de Organización Zen
                 </p>
 
                 <div className="flex justify-center w-full">
