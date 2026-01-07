@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
@@ -10,7 +10,7 @@ import { Loader2, ArrowLeft, CheckCircle, RefreshCcw, Send, FileUp, Info } from 
 import { getClientActions, respondToAction } from '@/services/clientActions';
 import { ProjectAction } from '@/types';
 
-export default function ClientActionsPage() {
+function ClientActionsContent() {
     const searchParams = useSearchParams();
     const projectId = searchParams.get('project');
     const router = useRouter();
@@ -128,7 +128,7 @@ export default function ClientActionsPage() {
                                                         variant="success"
                                                         className="w-full h-10 text-xs"
                                                         onClick={() => handleResponse(action.id, 'APPROVED')}
-                                                        loading={responding === action.id}
+                                                        isLoading={responding === action.id}
                                                     >
                                                         <CheckCircle size={14} className="mr-2" /> Aprobar
                                                     </Button>
@@ -136,7 +136,7 @@ export default function ClientActionsPage() {
                                                         variant="outline"
                                                         className="w-full h-10 text-xs border-amber-500/20 text-amber-500 hover:bg-amber-500/10"
                                                         onClick={() => handleResponse(action.id, 'CHANGES_REQUESTED')}
-                                                        loading={responding === action.id}
+                                                        isLoading={responding === action.id}
                                                     >
                                                         <RefreshCcw size={14} className="mr-2" /> Solicitar Cambios
                                                     </Button>
@@ -146,7 +146,7 @@ export default function ClientActionsPage() {
                                                     variant="primary"
                                                     className="w-full h-10 text-xs col-span-2 shadow-[0_0_15px_rgba(255,255,255,0.05)]"
                                                     onClick={() => handleResponse(action.id, 'SENT')}
-                                                    loading={responding === action.id}
+                                                    isLoading={responding === action.id}
                                                 >
                                                     <Send size={14} className="mr-2" /> Marcar como Enviado
                                                 </Button>
@@ -173,5 +173,18 @@ export default function ClientActionsPage() {
                 </div>
             </div>
         </div>
+    );
+}
+
+export default function ClientActionsPage() {
+    return (
+        <Suspense fallback={
+            <div className="flex flex-col items-center justify-center min-h-[50vh] space-y-4">
+                <Loader2 className="animate-spin text-emerald-500" size={48} />
+                <p className="text-gray-500">Iniciando...</p>
+            </div>
+        }>
+            <ClientActionsContent />
+        </Suspense>
     );
 }
