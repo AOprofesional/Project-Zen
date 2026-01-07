@@ -1,0 +1,52 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --foreground-rgb: 255, 255, 255;
+  --background-start-rgb: 10, 10, 10;
+  --background-end-rgb: 0, 0, 0;
+}
+
+body {
+  color: rgb(var(--foreground-rgb));
+  background: #09090b;
+  font-family: var(--font-inter), sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Custom Glassmorphism Utilities */
+.glass-panel {
+  @apply bg-surface/50 backdrop-blur-md border border-white/5 shadow-xl;
+}
+
+.glass-input {
+  @apply bg-white/5 border border-white/10 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-accent/50 transition-all;
+}
+
+/* Scrollbar hiding for clean UI */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  /* IE and Edge */
+  scrollbar-width: none;
+  /* Firefox */
+}
+
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%) skewX(-30deg);
+  }
+
+  100% {
+    transform: translateX(200%) skewX(-30deg);
+  }
+}
+
+.animate-shimmer {
+  animation: shimmer 2.5s infinite linear;
+}
