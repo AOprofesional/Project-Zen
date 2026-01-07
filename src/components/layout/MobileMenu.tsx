@@ -34,27 +34,31 @@ export function MobileMenu() {
 
     const toggleMenu = () => setIsOpen(!isOpen);
 
+    // Fallback if icons are missing or failing to render (unlikely but good for debug)
+    const MenuIcon = Menu || (() => <span>☰</span>);
+    const CloseIcon = X || (() => <span>✕</span>);
+
     return (
         <>
-            {/* Mobile Header */}
-            <header className="md:hidden fixed top-0 left-0 w-full h-16 bg-black/80 backdrop-blur-md border-b border-white/10 flex items-center justify-between px-4 z-40">
+            {/* Mobile Header - High visibility */}
+            <header className="md:hidden fixed top-0 left-0 w-full h-16 bg-[#0c0c0e] border-b border-white/10 flex items-center justify-between px-4 z-[60] shadow-lg">
                 <div className="flex items-center gap-2">
-                    <YingYangIcon size={20} className="text-white" />
-                    <span className="font-bold text-white">Project Zen</span>
+                    <YingYangIcon size={24} className="text-white" />
+                    <span className="font-bold text-white tracking-tight">Project Zen</span>
                 </div>
                 <button
                     onClick={toggleMenu}
-                    className="p-2 text-gray-400 hover:text-white transition-colors"
+                    className="p-2 text-white bg-white/5 rounded-lg active:bg-white/10 transition-colors"
                     aria-label="Toggle menu"
                 >
-                    {isOpen ? <X size={24} /> : <Menu size={24} />}
+                    {isOpen ? <CloseIcon size={24} /> : <MenuIcon size={24} />}
                 </button>
             </header>
 
             {/* Mobile Menu Overlay */}
             <div
                 className={twMerge(
-                    "fixed inset-0 bg-black/60 backdrop-blur-sm z-40 md:hidden transition-opacity duration-300",
+                    "fixed inset-0 bg-black/80 backdrop-blur-sm z-[70] md:hidden transition-all duration-300",
                     isOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
                 )}
                 onClick={toggleMenu}
@@ -63,7 +67,7 @@ export function MobileMenu() {
             {/* Mobile Menu Content */}
             <aside
                 className={twMerge(
-                    "fixed top-0 right-0 h-screen w-72 bg-black/90 border-l border-white/10 backdrop-blur-xl z-50 md:hidden flex flex-col transition-transform duration-300 transform",
+                    "fixed top-0 right-0 h-screen w-72 bg-[#0c0c0e] border-l border-white/10 z-[80] md:hidden flex flex-col transition-transform duration-300 transform",
                     isOpen ? "translate-x-0" : "translate-x-full"
                 )}
             >

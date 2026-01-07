@@ -21,46 +21,48 @@ async function verifyAdmin() {
 }
 
 export async function GET(req: NextRequest) {
-    console.log("ADMIN API: GET called");
-    if (!await verifyAdmin()) {
-        console.error("ADMIN API: verifyAdmin failed");
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
     try {
-        // 1. Try with authenticated server client (uses user session + RLS)
+        console.log("ADMIN API: GET called");
+        const isAdmin = await verifyAdmin();
+
+        if (!isAdmin) {
+            console.error("ADMIN API: verifyAdmin failed (not an admin or not logged in)");
+            return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+        }
+
+        // 1. Try with authenticated server client
         const supabase = createClient();
         console.log("ADMIN API: Fetching with server client...");
-        let { data: profiles, error, status } = await supabase
+
+        const { data: profiles, error } = await supabase
             .from('profiles')
             .select('*')
             .order('created_at', { ascending: false });
 
-        // 2. Fallback to admin client if server client returned 0 results or error
-        if (error || !profiles || profiles.length === 0) {
-            console.log(`ADMIN API: Server client returned 0 or error (${error?.message}). Trying Admin client...`);
+        if (error) {
+            console.log(`ADMIN API: Server client error (${error.message}). Trying Admin client...`);
             const admin = getSupabaseAdmin();
-            const { data: adminProfiles, error: adminError, status: adminStatus } = await admin
+            const { data: adminProfiles, error: adminError } = await admin
                 .from('profiles')
                 .select('*')
                 .order('created_at', { ascending: false });
 
             if (adminError) {
                 console.error("ADMIN API: Admin client also failed:", adminError);
-                if (error) throw error;
-                throw adminError;
+                return NextResponse.json({ error: adminError.message }, { status: 500 });
             }
-
-            console.log(`ADMIN API: Admin client returned ${adminProfiles?.length || 0} profiles (status ${adminStatus})`);
-            profiles = adminProfiles;
-        } else {
-            console.log(`ADMIN API: Server client successfully fetched ${profiles?.length} profiles`);
+            return NextResponse.json(adminProfiles || []);
         }
 
+        console.log(`ADMIN API: Successfully fetched ${profiles?.length || 0} profiles`);
         return NextResponse.json(profiles || []);
+
     } catch (err: any) {
-        console.error("ADMIN API ERROR:", err);
-        return NextResponse.json({ error: err.message }, { status: 500 });
+        console.error("ADMIN API FATAL ERROR:", err);
+        return NextResponse.json(
+            { error: err.message || 'Error interno del servidor' },
+            { status: 500 }
+        );
     }
 }
 

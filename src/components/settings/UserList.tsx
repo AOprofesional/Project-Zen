@@ -66,6 +66,15 @@ export function UserList({ currentRole }: UserListProps) {
         setError(null);
         try {
             const res = await fetch('/api/admin/users');
+
+            // Check if response is JSON
+            const contentType = res.headers.get("content-type");
+            if (!contentType || !contentType.includes("application/json")) {
+                const text = await res.text();
+                console.error("Non-JSON response:", text);
+                throw new Error(`Respuesta no válida del servidor (${res.status})`);
+            }
+
             const data = await res.json();
 
             if (res.ok) {
@@ -74,8 +83,8 @@ export function UserList({ currentRole }: UserListProps) {
                 setError(data.error || 'Error al cargar usuarios');
             }
         } catch (error: any) {
-            console.error(error);
-            setError('Error de Red: ' + error.message);
+            console.error("Fetch Users Error:", error);
+            setError('Error de Red: ' + (error.message || 'Error desconocido'));
         } finally {
             setLoading(false);
         }
