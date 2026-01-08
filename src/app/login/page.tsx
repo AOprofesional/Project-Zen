@@ -14,7 +14,6 @@ export default function LoginPage() {
     const [password, setPassword] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [message, setMessage] = useState<string | null>(null);
-    const [loginMode, setLoginMode] = useState<'password' | 'magic'>('password');
     const router = useRouter();
 
     const handleLogin = async (e: React.FormEvent) => {
@@ -24,42 +23,24 @@ export default function LoginPage() {
 
         const supabase = createClient();
 
-        if (loginMode === 'password') {
-            const { data, error } = await supabase.auth.signInWithPassword({
-                email,
-                password,
-            });
+        const { data, error } = await supabase.auth.signInWithPassword({
+            email,
+            password,
+        });
 
-            if (error) {
-                setMessage(`Error: ${error.message}`);
-            } else {
-                // Success - redirect is handled by manual logic or role check
-                // For direct password login, we usually want to check role and redirect
-                const { data: profile } = await supabase
-                    .from('profiles')
-                    .select('role')
-                    .eq('id', data.user?.id)
-                    .single();
-
-                if (profile?.role === 'ADMIN') {
-                    router.push('/dashboard');
-                } else {
-                    router.push('/portal');
-                }
-            }
+        if (error) {
+            setMessage(`Error: ${error.message}`);
         } else {
-            // Using Magic Link
-            const { error } = await supabase.auth.signInWithOtp({
-                email,
-                options: {
-                    emailRedirectTo: `${window.location.origin}/auth/callback`,
-                },
-            });
+            const { data: profile } = await supabase
+                .from('profiles')
+                .select('role')
+                .eq('id', data.user?.id)
+                .single();
 
-            if (error) {
-                setMessage(`Error: ${error.message}`);
+            if (profile?.role === 'ADMIN') {
+                router.push('/dashboard');
             } else {
-                setMessage('¡Enlace mágico enviado! Revisa tu correo.');
+                router.push('/portal');
             }
         }
 
@@ -67,7 +48,7 @@ export default function LoginPage() {
     };
 
     return (
-        <main className="flex min-h-screen flex-col items-center justify-center p-4 bg-background">
+        <main className="flex min-h-screen flex-col items-center justify-center p-4 bg-background relative">
             <div className="w-full max-w-md">
                 <div className="text-center mb-8">
                     <div className="flex items-center justify-center gap-3">
@@ -81,7 +62,7 @@ export default function LoginPage() {
 
                 <Card className="border-white/10 backdrop-blur-xl">
                     <form onSubmit={handleLogin} className="space-y-4">
-                        <div>
+                        <div className="space-y-4 px-1">
                             <Input
                                 type="email"
                                 placeholder="tu@email.com"
@@ -91,51 +72,28 @@ export default function LoginPage() {
                                 className="bg-black/20"
                                 label="Email"
                             />
-                            {loginMode === 'password' && (
-                                <div>
-                                    <Input
-                                        type="password"
-                                        placeholder="••••••••"
-                                        value={password}
-                                        onChange={(e) => setPassword(e.target.value)}
-                                        required
-                                        className="bg-black/20"
-                                        label="Contraseña"
-                                    />
-                                </div>
-                            )}
+                            <Input
+                                type="password"
+                                placeholder="••••••••"
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                required
+                                className="bg-black/20"
+                                label="Contraseña"
+                            />
 
                             <Button
                                 type="submit"
                                 className="w-full bg-white text-black hover:bg-gray-200"
                                 isLoading={isLoading}
                             >
-                                {isLoading ? 'Cargando...' : (loginMode === 'password' ? 'Entrar' : 'Enviar Enlace Mágico')}
+                                {isLoading ? 'Cargando...' : 'Entrar'}
                             </Button>
 
-                            <div className="flex items-center justify-between text-xs text-secondary px-1">
-                                {loginMode === 'password' ? (
-                                    <>
-                                        <button
-                                            type="button"
-                                            onClick={() => setLoginMode('magic')}
-                                            className="hover:text-white transition-colors"
-                                        >
-                                            Usar enlace mágico
-                                        </button>
-                                        <Link href="/login/recovery" className="hover:text-white transition-colors">
-                                            ¿Olvidaste tu contraseña?
-                                        </Link>
-                                    </>
-                                ) : (
-                                    <button
-                                        type="button"
-                                        onClick={() => setLoginMode('password')}
-                                        className="hover:text-white transition-colors text-center w-full"
-                                    >
-                                        Volver al acceso con contraseña
-                                    </button>
-                                )}
+                            <div className="flex items-center justify-end text-xs text-secondary px-1">
+                                <Link href="/login/recovery" className="hover:text-white transition-colors">
+                                    ¿Olvidaste tu contraseña?
+                                </Link>
                             </div>
 
                             {message && (
@@ -152,6 +110,11 @@ export default function LoginPage() {
                         </div>
                     </form>
                 </Card>
+            </div>
+            <div className="fixed bottom-6 right-8 opacity-20 hover:opacity-100 transition-opacity">
+                <p className="text-[9px] text-gray-500 font-medium tracking-widest uppercase">
+                    realizado por: AO Profesional
+                </p>
             </div>
         </main>
     );

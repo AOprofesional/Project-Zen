@@ -34,8 +34,15 @@ export default function ClientLayout({ children }: { children: ReactNode }) {
             </header>
 
 
-            <main className="pt-24 pb-12 px-6 max-w-5xl mx-auto">
-                {children}
+            <main className="pt-24 pb-12 px-6 max-w-5xl mx-auto flex flex-col min-h-[calc(100vh-64px)]">
+                <div className="flex-1">
+                    {children}
+                </div>
+                <footer className="mt-20 flex justify-end opacity-20 hover:opacity-100 transition-opacity">
+                    <p className="text-[9px] text-gray-400 font-medium tracking-[0.2em] uppercase">
+                        realizado por: AO Profesional
+                    </p>
+                </footer>
             </main>
         </div>
     );
