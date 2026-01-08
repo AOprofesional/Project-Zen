@@ -6,7 +6,7 @@ import { getProjectDetails, deleteProject } from '@/services/projects';
 import { Project, ProjectResource, UserProfile } from '@/types';
 import { Button } from '@/components/ui/Button';
 import { ArrowLeft, Calendar, Briefcase, Clock, Trash2, Pencil } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { ClientAssigner } from '@/components/clients/ClientAssigner';
 import { ResourceManager } from '@/components/clients/ResourceManager';
 import { Badge } from '@/components/ui/Badge';
@@ -14,34 +14,40 @@ import { ProjectTasksManager } from '@/components/clients/ProjectTasksManager';
 import { AdminClientActions } from '@/components/clients/AdminClientActions';
 import { EditProjectModal } from '@/components/clients/EditProjectModal';
 
-export default function ProjectDetailPage({ params }: { params: { id: string } }) {
+export default function ProjectDetailPage() {
+    const searchParams = useSearchParams();
+    const id = searchParams.get('id');
+
     const [data, setData] = useState<{ project: Project; resources: ProjectResource[]; client: UserProfile | null } | null>(null);
     const [loading, setLoading] = useState(true);
     const [isEditing, setIsEditing] = useState(false);
     const router = useRouter();
 
     const fetchData = async () => {
+        if (!id) return;
         try {
-            const result = await getProjectDetails(params.id);
+            const result = await getProjectDetails(id);
             setData(result);
         } catch (e) {
             console.error(e);
-            // router.push('/dashboard/clients'); // handle error
         } finally {
             setLoading(false);
         }
     };
 
     const handleDelete = async () => {
+        if (!id) return;
         if (confirm('¿Eliminar este proyecto y todas sus tareas asociadas?')) {
-            await deleteProject(params.id);
+            await deleteProject(id);
             router.push('/dashboard/clients');
         }
     };
 
     useEffect(() => {
-        fetchData();
-    }, [params.id]);
+        if (id) {
+            fetchData();
+        }
+    }, [id]);
 
     if (loading || !data) {
         return <DashboardLayout><div className="flex justify-center p-20"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div></div></DashboardLayout>;

@@ -92,7 +92,7 @@ export default function ClientsPage() {
                         </div>
                     )}
                     {projects.map((project, index) => (
-                        <Link key={project.id} href={`/dashboard/clients/${project.id}`}>
+                        <Link key={project.id} href={`/dashboard/clients/project?id=${project.id}`}>
                             <Card className="group relative hover:border-white/20 transition-all h-full cursor-pointer hover:bg-white/5">
                                 <div className="flex justify-between items-center mb-4">
                                     <div className="p-2 bg-blue-500/10 rounded-lg text-blue-400">
