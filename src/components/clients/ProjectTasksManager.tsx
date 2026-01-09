@@ -15,7 +15,7 @@ interface ProjectTasksManagerProps {
 
 export function ProjectTasksManager({ projectId }: ProjectTasksManagerProps) {
     const [tasks, setTasks] = useState<Todo[]>([]);
-    const [newItem, setNewItem] = useState({ content: '', description: '', due_date: '' });
+    const [newItem, setNewItem] = useState({ content: '', description: '', due_date: '', priority: 'NORMAL' as 'NORMAL' | 'MEDIUM' | 'URGENT' });
     const [isAdding, setIsAdding] = useState(false);
     const [loading, setLoading] = useState(false);
     const [selectedTask, setSelectedTask] = useState<Todo | null>(null);
@@ -38,11 +38,12 @@ export function ProjectTasksManager({ projectId }: ProjectTasksManagerProps) {
                 content: newItem.content,
                 description: newItem.description,
                 type: 'PROJECT_TASK',
+                priority: newItem.priority,
                 project_id: projectId,
                 due_date: newItem.due_date || new Date().toISOString(),
                 status: 'PENDING'
             });
-            setNewItem({ content: '', description: '', due_date: '' });
+            setNewItem({ content: '', description: '', due_date: '', priority: 'NORMAL' });
             setIsAdding(false);
             fetchTasks();
         } catch (e) {
@@ -111,11 +112,30 @@ export function ProjectTasksManager({ projectId }: ProjectTasksManagerProps) {
                         <div className="space-y-1.5">
                             <label className="block text-xs font-medium text-gray-400 ml-1">Descripción (Opcional)</label>
                             <input
-                                className="glass-input w-full text-sm p-2 rounded-lg bg-black/20 border border-white/10 text-white focus:outline-none placeholder:text-gray-600"
-                                placeholder="Detalles extra..."
                                 value={newItem.description}
                                 onChange={(e) => setNewItem({ ...newItem, description: e.target.value })}
                             />
+                        </div>
+                    </div>
+
+                    <div className="space-y-1.5">
+                        <label className="block text-xs font-medium text-gray-400 ml-1">Prioridad</label>
+                        <div className="grid grid-cols-3 gap-2">
+                            {(['NORMAL', 'MEDIUM', 'URGENT'] as const).map((p) => (
+                                <button
+                                    key={p}
+                                    type="button"
+                                    onClick={() => setNewItem({ ...newItem, priority: p })}
+                                    className={`py-1.5 text-[10px] font-bold uppercase tracking-wider rounded-md border transition-all ${newItem.priority === p
+                                        ? p === 'URGENT' ? 'bg-red-500 text-white border-red-500'
+                                            : p === 'MEDIUM' ? 'bg-orange-500 text-white border-orange-500'
+                                                : 'bg-white text-black border-white'
+                                        : 'bg-transparent border-white/5 text-gray-500 hover:border-white/20'
+                                        }`}
+                                >
+                                    {p === 'NORMAL' ? 'Normal' : p === 'MEDIUM' ? 'Media' : 'Urgente'}
+                                </button>
+                            ))}
                         </div>
                     </div>
 
@@ -158,6 +178,11 @@ export function ProjectTasksManager({ projectId }: ProjectTasksManagerProps) {
                                 <Badge variant={task.status === 'COMPLETED' ? 'success' : task.status === 'IN_PROGRESS' ? 'warning' : 'outline'} className="text-[10px] h-5 px-2">
                                     {task.status === 'COMPLETED' ? 'Finalizada' : task.status === 'IN_PROGRESS' ? 'En Progreso' : 'Pendiente'}
                                 </Badge>
+                                {task.priority && task.priority !== 'NORMAL' && (
+                                    <Badge variant={task.priority === 'URGENT' ? 'error' : 'warning'} className="text-[10px] h-5 px-2 uppercase tracking-tighter">
+                                        {task.priority === 'URGENT' ? 'Urgente' : 'Media'}
+                                    </Badge>
+                                )}
                                 <span className="text-[10px] text-gray-600 flex items-center gap-1 hover:text-indigo-400 transition-colors">
                                     <MessageSquare size={10} /> Comentar
                                 </span>

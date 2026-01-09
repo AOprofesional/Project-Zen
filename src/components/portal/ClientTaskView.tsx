@@ -89,6 +89,11 @@ export function ClientTaskView({ tasks, onTasksChange }: ClientTaskViewProps) {
                                 <Badge variant={task.status === 'COMPLETED' ? 'success' : task.status === 'IN_PROGRESS' ? 'warning' : 'outline'} className="text-[10px] h-5 px-2">
                                     {task.status === 'COMPLETED' ? 'Finalizada' : task.status === 'IN_PROGRESS' ? 'En Progreso' : 'Pendiente'}
                                 </Badge>
+                                {task.priority && task.priority !== 'NORMAL' && (
+                                    <Badge variant={task.priority === 'URGENT' ? 'error' : 'warning'} className="text-[10px] h-5 px-2 uppercase tracking-tighter">
+                                        {task.priority === 'URGENT' ? 'Urgente' : 'Media'}
+                                    </Badge>
+                                )}
                                 <span className="text-[10px] text-gray-500 flex items-center gap-1 group-hover:text-indigo-400 transition-colors">
                                     <MessageSquare size={10} /> Chat / Detalles
                                 </span>

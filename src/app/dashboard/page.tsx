@@ -142,6 +142,20 @@ export default function DashboardPage() {
         ...data.projectTasks
     ];
 
+    const sortTasksByPriority = (tasks: Todo[]) => {
+        const priorityOrder = { 'URGENT': 3, 'MEDIUM': 2, 'NORMAL': 1 };
+        return [...tasks].sort((a, b) => {
+            if (a.is_completed !== b.is_completed) return a.is_completed ? 1 : -1;
+            const pA = priorityOrder[a.priority || 'NORMAL'] || 0;
+            const pB = priorityOrder[b.priority || 'NORMAL'] || 0;
+            return pB - pA;
+        });
+    };
+
+    const sortedPersonalDaily = sortTasksByPriority(personalDaily);
+    const sortedWeeklyTasks = sortTasksByPriority(data.weeklyTasks);
+    const sortedProjectTasks = sortTasksByPriority(allProjectTasks);
+
     // Progress Calculations
     const calculateProgress = () => {
         if (activeFilter === 'PERSONAL') {
@@ -241,10 +255,10 @@ export default function DashboardPage() {
                             <section>
                                 <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-4">Foco de Hoy</h3>
                                 <Card className="space-y-1">
-                                    {personalDaily.length === 0 ? (
+                                    {sortedPersonalDaily.length === 0 ? (
                                         <p className="text-center text-gray-500 py-8">Nada pendiente para hoy. ¡Disfruta!</p>
                                     ) : (
-                                        personalDaily.map(task => (
+                                        sortedPersonalDaily.map(task => (
                                             <TaskItem key={task.id} task={task} onToggle={handleToggleTask} onEdit={setEditingTask} />
                                         ))
                                     )}
@@ -255,10 +269,10 @@ export default function DashboardPage() {
                             <section>
                                 <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-4">Esta Semana</h3>
                                 <Card className="space-y-1 bg-white/5 border-white/5">
-                                    {data.weeklyTasks.length === 0 ? (
+                                    {sortedWeeklyTasks.length === 0 ? (
                                         <p className="text-xs text-gray-600 p-2">Limpio por esta semana.</p>
                                     ) : (
-                                        data.weeklyTasks.map(task => (
+                                        sortedWeeklyTasks.map(task => (
                                             <TaskItem key={task.id} task={task} onToggle={handleToggleTask} onEdit={setEditingTask} />
                                         ))
                                     )}
@@ -279,7 +293,7 @@ export default function DashboardPage() {
                                             {project.name}
                                         </h3>
                                         <Card className="space-y-1">
-                                            {projectTasks.map(task => (
+                                            {sortTasksByPriority(projectTasks).map(task => (
                                                 <TaskItem key={task.id} task={task} onToggle={handleToggleTask} onEdit={setEditingTask} />
                                             ))}
                                         </Card>

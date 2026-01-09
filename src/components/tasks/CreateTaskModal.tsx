@@ -19,6 +19,7 @@ export function CreateTaskModal({ onClose, onSuccess }: CreateTaskModalProps) {
     const [dueDate, setDueDate] = useState('');
     const [selectedDays, setSelectedDays] = useState<string[]>([]);
     const [monthDay, setMonthDay] = useState<number>(1);
+    const [priority, setPriority] = useState<'NORMAL' | 'MEDIUM' | 'URGENT'>('NORMAL');
     const [loading, setLoading] = useState(false);
 
     // Auto-set today's date for DAILY tasks
@@ -40,6 +41,7 @@ export function CreateTaskModal({ onClose, onSuccess }: CreateTaskModalProps) {
             await createTask({
                 content,
                 type,
+                priority,
                 due_date: (type === 'ROUTINE' || type === 'WEEKLY' || type === 'MONTHLY') ? null : (dueDate ? new Date(dueDate).toISOString() : null),
                 recurrence_days: type === 'WEEKLY' ? selectedDays : null,
                 recurrence_month_day: type === 'MONTHLY' ? monthDay : null,
@@ -76,6 +78,29 @@ export function CreateTaskModal({ onClose, onSuccess }: CreateTaskModalProps) {
                                     className={`px-2 py-1.5 text-[10px] font-bold uppercase tracking-wider rounded-md border transition-all ${type === t ? 'bg-white text-black border-white shadow-[0_0_15px_rgba(255,255,255,0.1)]' : 'bg-transparent border-white/5 text-gray-500 hover:border-white/20 hover:text-gray-300'}`}
                                 >
                                     {getTaskTypeLabel(t)}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    <div>
+                        <label className="block text-xs font-medium text-gray-400 mb-1.5 ml-1">
+                            Prioridad
+                        </label>
+                        <div className="flex gap-2">
+                            {(['NORMAL', 'MEDIUM', 'URGENT'] as const).map((p) => (
+                                <button
+                                    key={p}
+                                    type="button"
+                                    onClick={() => setPriority(p)}
+                                    className={`flex-1 py-1.5 text-[10px] font-bold uppercase tracking-wider rounded-md border transition-all ${priority === p
+                                        ? p === 'URGENT' ? 'bg-red-500 text-white border-red-500 shadow-[0_0_15px_rgba(239,68,68,0.3)]'
+                                            : p === 'MEDIUM' ? 'bg-orange-500 text-white border-orange-500 shadow-[0_0_15px_rgba(249,115,22,0.3)]'
+                                                : 'bg-white text-black border-white shadow-[0_0_15px_rgba(255,255,255,0.1)]'
+                                        : 'bg-transparent border-white/5 text-gray-500 hover:border-white/20 hover:text-gray-300'
+                                        }`}
+                                >
+                                    {p === 'NORMAL' ? 'Normal' : p === 'MEDIUM' ? 'Media' : 'Urgente'}
                                 </button>
                             ))}
                         </div>

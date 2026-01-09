@@ -12,7 +12,10 @@ export function TaskItem({ task, onToggle, onEdit }: TaskItemProps) {
     const isClientTask = task.type === 'PROJECT_TASK';
 
     return (
-        <div className="group flex items-start gap-3 p-3 rounded-lg hover:bg-white/5 transition-colors">
+        <div className={twMerge(
+            "group flex items-start gap-3 p-3 rounded-lg hover:bg-white/5 transition-all border border-transparent",
+            task.priority === 'URGENT' && !task.is_completed && "bg-red-500/5 border-red-500/20 shadow-[inset_0_0_20px_rgba(239,68,68,0.05)]"
+        )}>
             <button
                 onClick={() => onToggle(task.id)}
                 className={twMerge(
@@ -46,6 +49,14 @@ export function TaskItem({ task, onToggle, onEdit }: TaskItemProps) {
                         <span className="flex items-center text-[10px] text-blue-400 bg-blue-500/10 px-1.5 py-0.5 rounded">
                             <Briefcase size={10} className="mr-1" />
                             Cliente
+                        </span>
+                    )}
+                    {task.priority && task.priority !== 'NORMAL' && (
+                        <span className={twMerge(
+                            "flex items-center text-[10px] px-1.5 py-0.5 rounded uppercase tracking-tighter font-bold",
+                            task.priority === 'URGENT' ? "text-red-400 bg-red-500/10" : "text-orange-400 bg-orange-500/10"
+                        )}>
+                            {task.priority === 'URGENT' ? 'Urgente' : 'Media'}
                         </span>
                     )}
                     {task.due_date && (

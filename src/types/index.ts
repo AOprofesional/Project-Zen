@@ -8,6 +8,8 @@ export type TaskType =
     | 'EVENTUAL'
     | 'PROJECT_TASK';
 
+export type TaskPriority = 'NORMAL' | 'MEDIUM' | 'URGENT';
+
 export interface UserProfile {
     id: string;
     email: string | null;
@@ -71,6 +73,7 @@ export interface Todo {
     is_completed: boolean; // Deprecated, mapped to status
     status: 'PENDING' | 'IN_PROGRESS' | 'COMPLETED'; // New field
     type: TaskType;
+    priority: TaskPriority;
     due_date?: string | null; // ISO Date string
     visualization_date?: string | null; // ISO Date string
     recurrence_days?: string[] | null; // e.g. ["MON", "WED"]
