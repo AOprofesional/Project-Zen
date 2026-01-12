@@ -7,18 +7,36 @@ import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { RoutineItem } from '@/components/dashboard/RoutineItem';
 import { TaskItem } from '@/components/dashboard/TaskItem';
 import { NoteCard } from '@/components/dashboard/NoteCard';
-import { CreateNoteModal } from '@/components/notes/CreateNoteModal';
+import { Todo, Note, DashboardData } from '@/types';
+import { ProgressBar } from '@/components/ui/ProgressBar';
 import { getDashboardData, toggleTaskStatus } from '@/services/dashboard';
 import { deleteNote, togglePinNote, updateNotesPositions } from '@/services/notes';
-import { DashboardData } from '@/types';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Plus } from 'lucide-react';
+import { CreateNoteModal } from '@/components/notes/CreateNoteModal';
 import { CreateTaskModal } from '@/components/tasks/CreateTaskModal';
 import { EditTaskModal } from '@/components/tasks/EditTaskModal';
 import { EditNoteModal } from '@/components/notes/EditNoteModal';
-import { Todo, Note } from '@/types';
-import { ProgressBar } from '@/components/ui/ProgressBar';
+import { updateTasksOrder } from '@/services/tasks';
+
+import {
+    DndContext,
+    closestCenter,
+    KeyboardSensor,
+    PointerSensor,
+    useSensor,
+    useSensors,
+    DragEndEvent
+} from '@dnd-kit/core';
+import {
+    arrayMove,
+    SortableContext,
+    sortableKeyboardCoordinates,
+    verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { SortableTaskItem } from '@/components/dashboard/SortableTaskItem';
+
 
 export default function DashboardPage() {
     const [data, setData] = useState<DashboardData | null>(null);
@@ -31,6 +49,17 @@ export default function DashboardPage() {
 
     const router = useRouter();
     const supabase = createClient();
+
+    const sensors = useSensors(
+        useSensor(PointerSensor, {
+            activationConstraint: {
+                distance: 8,
+            },
+        }),
+        useSensor(KeyboardSensor, {
+            coordinateGetter: sortableKeyboardCoordinates,
+        })
+    );
 
     const refreshData = () => {
         getDashboardData().then(d => setData(d));
@@ -123,6 +152,59 @@ export default function DashboardPage() {
         }
     };
 
+    const handleDragEnd = async (event: DragEndEvent, listKey: 'dailyTasks' | 'weeklyTasks' | 'projectTasks' | 'allProjectTasks') => {
+        const { active, over } = event;
+        if (!over || active.id === over.id || !data) return;
+
+        let sourceList: Todo[] = [];
+        let itemsForReorder: Todo[] = [];
+
+        if (listKey === 'allProjectTasks') {
+            // Special case for grouped projects: reorder only within the specific project's subset
+            const task = [...data.dailyTasks, ...data.projectTasks].find(t => t.id === active.id);
+            if (!task) return;
+            const projectId = task.project_id;
+            sourceList = [...data.dailyTasks.filter(t => t.project_id === projectId), ...data.projectTasks.filter(t => t.project_id === projectId)];
+        } else {
+            sourceList = data[listKey];
+        }
+
+        const oldIndex = sourceList.findIndex(t => t.id === active.id);
+        const newIndex = sourceList.findIndex(t => t.id === over.id);
+
+        if (oldIndex === -1 || newIndex === -1) return;
+
+        const newTasks = arrayMove(sourceList, oldIndex, newIndex);
+
+        // Prepare updates for backend
+        const updates = newTasks.map((t, i) => ({
+            id: t.id,
+            order_index: i
+        }));
+
+        // Optimistic update (slightly trickier for allProjectTasks)
+        if (listKey === 'allProjectTasks') {
+            const updatedIds = new Set(newTasks.map(t => t.id));
+            setData({
+                ...data,
+                dailyTasks: data.dailyTasks.map(t => updatedIds.has(t.id) ? { ...t, order_index: newTasks.findIndex(nt => nt.id === t.id) } : t),
+                projectTasks: data.projectTasks.map(t => updatedIds.has(t.id) ? { ...t, order_index: newTasks.findIndex(nt => nt.id === t.id) } : t)
+            });
+        } else {
+            setData({
+                ...data,
+                [listKey]: newTasks.map((t, i) => ({ ...t, order_index: i }))
+            });
+        }
+
+        try {
+            await updateTasksOrder(updates);
+        } catch (error) {
+            console.error(error);
+            refreshData();
+        }
+    };
+
     if (loading) {
         return (
             <DashboardLayout>
@@ -142,19 +224,17 @@ export default function DashboardPage() {
         ...data.projectTasks
     ];
 
-    const sortTasksByPriority = (tasks: Todo[]) => {
-        const priorityOrder = { 'URGENT': 3, 'MEDIUM': 2, 'NORMAL': 1 };
+    const sortTasksByOrder = (tasks: Todo[]) => {
         return [...tasks].sort((a, b) => {
             if (a.is_completed !== b.is_completed) return a.is_completed ? 1 : -1;
-            const pA = priorityOrder[a.priority || 'NORMAL'] || 0;
-            const pB = priorityOrder[b.priority || 'NORMAL'] || 0;
-            return pB - pA;
+            return (a.order_index ?? 0) - (b.order_index ?? 0);
         });
     };
 
-    const sortedPersonalDaily = sortTasksByPriority(personalDaily);
-    const sortedWeeklyTasks = sortTasksByPriority(data.weeklyTasks);
-    const sortedProjectTasks = sortTasksByPriority(allProjectTasks);
+    const sortedPersonalDaily = sortTasksByOrder(personalDaily);
+    const sortedWeeklyTasks = sortTasksByOrder(data.weeklyTasks);
+    const sortedProjectTasks = sortTasksByOrder(allProjectTasks);
+
 
     // Progress Calculations
     const calculateProgress = () => {
@@ -254,13 +334,26 @@ export default function DashboardPage() {
                             {/* SECTION: TODAY / FOCUS */}
                             <section>
                                 <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-4">Foco de Hoy</h3>
-                                <Card className="space-y-1">
+                                <Card className="p-1">
                                     {sortedPersonalDaily.length === 0 ? (
                                         <p className="text-center text-gray-500 py-8">Nada pendiente para hoy. ¡Disfruta!</p>
                                     ) : (
-                                        sortedPersonalDaily.map(task => (
-                                            <TaskItem key={task.id} task={task} onToggle={handleToggleTask} onEdit={setEditingTask} />
-                                        ))
+                                        <DndContext
+                                            sensors={sensors}
+                                            collisionDetection={closestCenter}
+                                            onDragEnd={(e) => handleDragEnd(e, 'dailyTasks')}
+                                        >
+                                            <SortableContext
+                                                items={sortedPersonalDaily.map(t => t.id)}
+                                                strategy={verticalListSortingStrategy}
+                                            >
+                                                <div className="space-y-1 py-1">
+                                                    {sortedPersonalDaily.map(task => (
+                                                        <SortableTaskItem key={task.id} task={task} onToggle={handleToggleTask} onEdit={setEditingTask} />
+                                                    ))}
+                                                </div>
+                                            </SortableContext>
+                                        </DndContext>
                                     )}
                                 </Card>
                             </section>
@@ -268,16 +361,30 @@ export default function DashboardPage() {
                             {/* SECTION: THIS WEEK */}
                             <section>
                                 <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-4">Esta Semana</h3>
-                                <Card className="space-y-1 bg-white/5 border-white/5">
+                                <Card className="p-1 bg-white/5 border-white/5">
                                     {sortedWeeklyTasks.length === 0 ? (
                                         <p className="text-xs text-gray-600 p-2">Limpio por esta semana.</p>
                                     ) : (
-                                        sortedWeeklyTasks.map(task => (
-                                            <TaskItem key={task.id} task={task} onToggle={handleToggleTask} onEdit={setEditingTask} />
-                                        ))
+                                        <DndContext
+                                            sensors={sensors}
+                                            collisionDetection={closestCenter}
+                                            onDragEnd={(e) => handleDragEnd(e, 'weeklyTasks')}
+                                        >
+                                            <SortableContext
+                                                items={sortedWeeklyTasks.map(t => t.id)}
+                                                strategy={verticalListSortingStrategy}
+                                            >
+                                                <div className="space-y-1 py-1">
+                                                    {sortedWeeklyTasks.map(task => (
+                                                        <SortableTaskItem key={task.id} task={task} onToggle={handleToggleTask} onEdit={setEditingTask} />
+                                                    ))}
+                                                </div>
+                                            </SortableContext>
+                                        </DndContext>
                                     )}
                                 </Card>
                             </section>
+
                         </>
                     ) : (
                         /* CLIENTS VIEW */
@@ -292,10 +399,27 @@ export default function DashboardPage() {
                                             <span className="w-1.5 h-1.5 rounded-full bg-blue-400" />
                                             {project.name}
                                         </h3>
-                                        <Card className="space-y-1">
-                                            {sortTasksByPriority(projectTasks).map(task => (
-                                                <TaskItem key={task.id} task={task} onToggle={handleToggleTask} onEdit={setEditingTask} />
-                                            ))}
+                                        <Card className="p-1">
+                                            {projectTasks.length === 0 ? (
+                                                <p className="text-center text-gray-500 py-4 text-xs">Sin tareas.</p>
+                                            ) : (
+                                                <DndContext
+                                                    sensors={sensors}
+                                                    collisionDetection={closestCenter}
+                                                    onDragEnd={(e) => handleDragEnd(e, 'allProjectTasks')}
+                                                >
+                                                    <SortableContext
+                                                        items={sortTasksByOrder(projectTasks).map(t => t.id)}
+                                                        strategy={verticalListSortingStrategy}
+                                                    >
+                                                        <div className="space-y-1 py-1">
+                                                            {sortTasksByOrder(projectTasks).map(task => (
+                                                                <SortableTaskItem key={task.id} task={task} onToggle={handleToggleTask} onEdit={setEditingTask} />
+                                                            ))}
+                                                        </div>
+                                                    </SortableContext>
+                                                </DndContext>
+                                            )}
                                         </Card>
                                     </section>
                                 );

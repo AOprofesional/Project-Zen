@@ -22,7 +22,8 @@ export async function getDashboardData(): Promise<DashboardData> {
         const { data: todos, error: todosError } = await supabase
             .from('todos')
             .select('*')
-            .or(`is_completed.eq.false,type.eq.ROUTINE,type.eq.DAILY`);
+            .or(`is_completed.eq.false,type.eq.ROUTINE,type.eq.DAILY`)
+            .order('order_index', { ascending: true });
 
         if (todosError) throw todosError;
 

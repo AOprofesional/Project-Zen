@@ -7,7 +7,7 @@ export async function getAllTasks() {
     const { data, error } = await supabase
         .from('todos')
         .select('*')
-        .order('due_date', { ascending: true })
+        .order('order_index', { ascending: true })
         .order('created_at', { ascending: false });
 
     if (error) {
@@ -79,4 +79,21 @@ export async function createTaskComment(taskId: string, content: string) {
 
     if (error) throw error;
     return data;
+}
+
+export async function updateTasksOrder(updates: { id: string, order_index: number }[]) {
+    const promises = updates.map(update =>
+        supabase
+            .from('todos')
+            .update({ order_index: update.order_index })
+            .eq('id', update.id)
+    );
+
+    const results = await Promise.all(promises);
+    const errors = results.filter(r => r.error).map(r => r.error);
+
+    if (errors.length > 0) {
+        console.error('Errors updating tasks order:', errors);
+        throw new Error('Failed to update some tasks order');
+    }
 }

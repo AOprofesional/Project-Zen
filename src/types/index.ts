@@ -78,6 +78,7 @@ export interface Todo {
     visualization_date?: string | null; // ISO Date string
     recurrence_days?: string[] | null; // e.g. ["MON", "WED"]
     recurrence_month_day?: number | null; // 1-31
+    order_index: number;
     created_at: string;
 }
 
