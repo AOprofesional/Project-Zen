@@ -16,7 +16,8 @@ function ClientActionsContent() {
     const router = useRouter();
     const [actions, setActions] = useState<ProjectAction[]>([]);
     const [loading, setLoading] = useState(true);
-    const [responding, setResponding] = useState<string | null>(null);
+    const [activeAction, setActiveAction] = useState<string | null>(null);
+    const [submitting, setSubmitting] = useState<string | null>(null);
     const [comment, setComment] = useState("");
 
     const loadActions = async () => {
@@ -32,20 +33,28 @@ function ClientActionsContent() {
     }, [projectId]);
 
     const handleResponse = async (actionId: string, status: 'APPROVED' | 'CHANGES_REQUESTED' | 'SENT') => {
+        console.log(`DEBUG: UI - handleResponse clicked for ${actionId} with status ${status}`);
+
         if (status === 'CHANGES_REQUESTED' && !comment.trim()) {
             alert("Por favor, explica qué cambios necesitas.");
             return;
         }
 
-        setResponding(actionId);
+        setSubmitting(actionId);
         try {
+            console.log("DEBUG: UI - Calling service respondToAction...");
             await respondToAction(actionId, status, comment);
+            console.log("DEBUG: UI - Service call success. Clearing comment and reloading.");
             setComment("");
+            setActiveAction(null);
             await loadActions();
+            console.log("DEBUG: UI - Actions reloaded.");
         } catch (e) {
-            console.error("Failed to respond to action", e);
+            console.error("DEBUG: UI - Failed to respond to action", e);
+            alert("Error al enviar la respuesta. Revisa la consola para más detalles.");
         } finally {
-            setResponding(null);
+            setSubmitting(null);
+            console.log("DEBUG: UI - setSubmitting(null) executed.");
         }
     };
 
@@ -59,6 +68,7 @@ function ClientActionsContent() {
     }
 
     const pendingOnClient = actions.filter(a => a.status === 'PENDING' || a.status === 'CHANGES_REQUESTED');
+    const completedActions = actions.filter(a => a.status === 'APPROVED' || a.status === 'SENT');
 
     return (
         <div className="space-y-8 animate-in fade-in duration-500">
@@ -113,9 +123,9 @@ function ClientActionsContent() {
                                     <div className="space-y-4">
                                         <textarea
                                             placeholder={action.type === 'APPROVAL' ? "Opcional: Comentarios o ajustes necesarios..." : "Escribe aquí la información solicitada o el link al archivo..."}
-                                            value={responding === action.id ? comment : (responding === null ? "" : "")}
+                                            value={activeAction === action.id ? comment : ""}
                                             onChange={(e) => {
-                                                setResponding(action.id);
+                                                setActiveAction(action.id);
                                                 setComment(e.target.value);
                                             }}
                                             className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-sm text-white placeholder:text-gray-600 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 transition-all min-h-[100px] resize-none"
@@ -128,7 +138,7 @@ function ClientActionsContent() {
                                                         variant="success"
                                                         className="w-full h-10 text-xs"
                                                         onClick={() => handleResponse(action.id, 'APPROVED')}
-                                                        isLoading={responding === action.id}
+                                                        isLoading={submitting === action.id}
                                                     >
                                                         <CheckCircle size={14} className="mr-2" /> Aprobar
                                                     </Button>
@@ -136,7 +146,7 @@ function ClientActionsContent() {
                                                         variant="outline"
                                                         className="w-full h-10 text-xs border-amber-500/20 text-amber-500 hover:bg-amber-500/10"
                                                         onClick={() => handleResponse(action.id, 'CHANGES_REQUESTED')}
-                                                        isLoading={responding === action.id}
+                                                        isLoading={submitting === action.id}
                                                     >
                                                         <RefreshCcw size={14} className="mr-2" /> Solicitar Cambios
                                                     </Button>
@@ -146,7 +156,7 @@ function ClientActionsContent() {
                                                     variant="primary"
                                                     className="w-full h-10 text-xs col-span-2 shadow-[0_0_15px_rgba(255,255,255,0.05)]"
                                                     onClick={() => handleResponse(action.id, 'SENT')}
-                                                    isLoading={responding === action.id}
+                                                    isLoading={submitting === action.id}
                                                 >
                                                     <Send size={14} className="mr-2" /> Marcar como Enviado
                                                 </Button>
@@ -157,6 +167,38 @@ function ClientActionsContent() {
                             </div>
                         </Card>
                     ))}
+                </div>
+            )}
+
+            {/* HISTORY SECTION */}
+            {completedActions.length > 0 && (
+                <div className="space-y-4 pt-4 border-t border-white/5">
+                    <h2 className="text-sm font-bold text-gray-500 uppercase tracking-widest flex items-center gap-2">
+                        <CheckCircle size={14} /> Historial de Acciones
+                    </h2>
+                    <div className="space-y-3">
+                        {completedActions.map(action => (
+                            <Card key={action.id} className="p-4 border-white/5 bg-white/[0.01] opacity-70">
+                                <div className="flex items-start justify-between gap-4">
+                                    <div className="space-y-1">
+                                        <div className="flex items-center gap-2">
+                                            <Badge variant={action.status === 'APPROVED' ? 'success' : 'default'} className="text-[10px]">
+                                                {action.status === 'APPROVED' ? 'APROBADO' : 'ENVIADO'}
+                                            </Badge>
+                                            <span className="text-[10px] text-gray-600">{action.type === 'APPROVAL' ? 'Aprobación' : 'Información'}</span>
+                                        </div>
+                                        <h4 className="font-medium text-sm text-gray-300">{action.title}</h4>
+                                        {action.client_response && (
+                                            <p className="text-xs text-gray-500 italic">Tu respuesta: "{action.client_response}"</p>
+                                        )}
+                                    </div>
+                                    <span className="text-[10px] text-gray-600 shrink-0">
+                                        {action.response_at ? new Date(action.response_at).toLocaleDateString() : ''}
+                                    </span>
+                                </div>
+                            </Card>
+                        ))}
+                    </div>
                 </div>
             )}
 

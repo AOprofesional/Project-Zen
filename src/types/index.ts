@@ -42,6 +42,7 @@ export interface ProjectAction {
     client_response?: string;
     response_at?: string;
     response_by?: string;
+    is_archived?: boolean;
     created_at: string;
 }
 

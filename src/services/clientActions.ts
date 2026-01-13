@@ -3,12 +3,18 @@ import { ProjectAction } from '@/types';
 
 const supabase = createClient();
 
-export async function getClientActions(projectId: string): Promise<ProjectAction[]> {
-    const { data, error } = await supabase
+export async function getClientActions(projectId: string, includeArchived: boolean = false): Promise<ProjectAction[]> {
+    let query = supabase
         .from('client_actions')
         .select('*')
         .eq('project_id', projectId)
         .order('created_at', { ascending: false });
+
+    if (!includeArchived) {
+        query = query.eq('is_archived', false);
+    }
+
+    const { data, error } = await query;
 
     if (error) {
         console.error("Error fetching client actions", error);
@@ -18,13 +24,47 @@ export async function getClientActions(projectId: string): Promise<ProjectAction
     return (data || []) as ProjectAction[];
 }
 
+export async function deleteClientAction(actionId: string) {
+    const { error } = await supabase
+        .from('client_actions')
+        .delete()
+        .eq('id', actionId);
+
+    if (error) throw error;
+}
+
+export async function archiveClientAction(actionId: string, archive: boolean = true) {
+    const { error } = await supabase
+        .from('client_actions')
+        .update({ is_archived: archive })
+        .eq('id', actionId);
+
+    if (error) throw error;
+}
+
+export async function updateClientAction(actionId: string, updates: Partial<ProjectAction>) {
+    const { error } = await supabase
+        .from('client_actions')
+        .update(updates)
+        .eq('id', actionId);
+
+    if (error) throw error;
+}
+
 export async function respondToAction(
     actionId: string,
     status: 'APPROVED' | 'CHANGES_REQUESTED' | 'SENT',
     response?: string
 ) {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error("No authenticated user");
+    console.log("DEBUG: respondToAction called", { actionId, status, response });
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+        console.error("DEBUG: Auth error in respondToAction", authError);
+        throw new Error("No authenticated user");
+    }
+
+    console.log("DEBUG: User authenticated", user.id);
 
     const { error } = await supabase
         .from('client_actions')
@@ -36,7 +76,11 @@ export async function respondToAction(
         })
         .eq('id', actionId);
 
-    if (error) throw error;
+    if (error) {
+        console.error("DEBUG: Update error in respondToAction", error);
+        throw error;
+    }
+    console.log("DEBUG: respondToAction success");
 }
 
 // Admin only functions
