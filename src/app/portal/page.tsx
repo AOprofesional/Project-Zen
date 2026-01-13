@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
-import { CheckCircle, Clock, FileText, ExternalLink, Loader2, LayoutGrid, AlertCircle } from 'lucide-react';
+import { CheckCircle, Clock, FileText, ExternalLink, Loader2, LayoutGrid, AlertCircle, MessageSquare, ArrowRight } from 'lucide-react';
 import { getClientPortalData, getClientProjects, PortalData } from '@/services/portal';
 import { ClientTaskView } from '@/components/portal/ClientTaskView';
 import { Project } from '@/types';
@@ -137,7 +137,20 @@ export default function ClientPortalPage() {
             </div>
 
             {/* Status Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <Card className="flex flex-col gap-4 border-blue-500/20 bg-blue-500/5 group cursor-pointer hover:bg-blue-500/10 transition-all" onClick={() => router.push(`/portal/actions?project=${project.id}`)}>
+                    <div className="p-3 bg-blue-500/10 w-fit rounded-lg text-blue-400 group-hover:scale-110 transition-transform">
+                        <MessageSquare size={24} />
+                    </div>
+                    <div>
+                        <h3 className="font-bold text-lg">¿Necesitas algo?</h3>
+                        <p className="text-sm text-gray-400">Envía una solicitud al equipo.</p>
+                    </div>
+                    <div className="mt-auto text-xs font-bold text-blue-400 flex items-center gap-1">
+                        Nueva Solicitud <ArrowRight size={12} className="group-hover:translate-x-1 transition-transform" />
+                    </div>
+                </Card>
+
                 <Card className="flex flex-col gap-4 border-emerald-500/20 bg-emerald-500/5">
                     <div className="p-3 bg-emerald-500/10 w-fit rounded-lg text-emerald-400">
                         <CheckCircle size={24} />

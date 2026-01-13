@@ -46,6 +46,20 @@ export interface ProjectAction {
     created_at: string;
 }
 
+export interface ClientRequest {
+    id: string;
+    project_id: string;
+    client_id: string;
+    title: string;
+    description?: string;
+    status: 'PENDING' | 'IN_PROGRESS' | 'RESOLVED' | 'REJECTED';
+    admin_response?: string;
+    is_read_by_admin: boolean;
+    created_at: string;
+    profiles?: { full_name: string | null; email: string | null };
+    projects?: { name: string };
+}
+
 export interface TaskComment {
     id: string;
     task_id: string;

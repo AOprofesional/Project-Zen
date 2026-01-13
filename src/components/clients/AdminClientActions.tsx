@@ -5,9 +5,11 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Badge } from '@/components/ui/Badge';
-import { Plus, Loader2, CheckCircle, RefreshCcw, Send, Trash2, X, Archive, ArchiveRestore, Eye, EyeOff } from 'lucide-react';
+import { Plus, Loader2, CheckCircle, RefreshCcw, Send, Trash2, X, Archive, ArchiveRestore, Eye, EyeOff, MessageSquare, ArrowRight } from 'lucide-react';
 import { getClientActions, createClientAction, deleteClientAction, archiveClientAction, updateClientAction } from '@/services/clientActions';
-import { ProjectAction } from '@/types';
+import { getClientRequests } from '@/services/clientRequests';
+import { ProjectAction, ClientRequest } from '@/types';
+import Link from 'next/link';
 
 export function AdminClientActions({ projectId }: { projectId: string }) {
     const [actions, setActions] = useState<ProjectAction[]>([]);
@@ -15,6 +17,8 @@ export function AdminClientActions({ projectId }: { projectId: string }) {
     const [isCreating, setIsCreating] = useState(false);
     const [editingId, setEditingId] = useState<string | null>(null);
     const [showArchived, setShowArchived] = useState(false);
+    const [clientRequests, setClientRequests] = useState<ClientRequest[]>([]);
+    const [loadingRequests, setLoadingRequests] = useState(false);
     const [formData, setFormData] = useState<{
         title: string;
         description: string;
@@ -32,8 +36,16 @@ export function AdminClientActions({ projectId }: { projectId: string }) {
         setLoading(false);
     };
 
+    const loadClientRequests = async () => {
+        setLoadingRequests(true);
+        const data = await getClientRequests(projectId);
+        setClientRequests(data.filter(r => r.status === 'PENDING'));
+        setLoadingRequests(false);
+    };
+
     useEffect(() => {
         loadActions();
+        loadClientRequests();
     }, [projectId, showArchived]);
 
     const resetForm = () => {
@@ -107,9 +119,30 @@ export function AdminClientActions({ projectId }: { projectId: string }) {
 
     return (
         <div className="space-y-6">
+            {clientRequests.length > 0 && (
+                <Card className="bg-blue-600/10 border-blue-500/20 p-4 animate-in slide-in-from-top duration-500">
+                    <div className="flex items-center justify-between gap-4">
+                        <div className="flex items-center gap-3">
+                            <div className="p-2 bg-blue-500/20 rounded-lg text-blue-400">
+                                <MessageSquare size={18} />
+                            </div>
+                            <div>
+                                <h4 className="text-sm font-bold text-blue-100">Este cliente tiene solicitudes</h4>
+                                <p className="text-xs text-blue-300/80">Hay {clientRequests.length} {clientRequests.length === 1 ? 'pedido pendiente' : 'pedidos pendientes'} de revisión para este proyecto.</p>
+                            </div>
+                        </div>
+                        <Link href="/dashboard/requests">
+                            <Button size="sm" variant="secondary" className="h-8 text-xs bg-blue-600 hover:bg-blue-500 border-none text-white whitespace-nowrap">
+                                Ver Solicitudes <ArrowRight size={14} className="ml-2" />
+                            </Button>
+                        </Link>
+                    </div>
+                </Card>
+            )}
+
             <div className="flex items-center justify-between">
                 <h3 className="text-xl font-bold flex items-center gap-2">
-                    <Send size={20} className="text-emerald-500" /> Pendientes de Revisión (V2)
+                    <Send size={20} className="text-emerald-500" /> Pendientes del Cliente
                 </h3>
                 <div className="flex items-center gap-2">
                     <button

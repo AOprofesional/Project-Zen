@@ -19,6 +19,7 @@ import { CreateTaskModal } from '@/components/tasks/CreateTaskModal';
 import { EditTaskModal } from '@/components/tasks/EditTaskModal';
 import { EditNoteModal } from '@/components/notes/EditNoteModal';
 import { updateTasksOrder } from '@/services/tasks';
+import { ClientRequestNotification } from '@/components/dashboard/ClientRequestNotification';
 
 import {
     DndContext,
@@ -436,6 +437,8 @@ export default function DashboardPage() {
 
                 {/* COL 3: Sidebar / Context */}
                 <div className="space-y-8">
+                    <ClientRequestNotification />
+
                     <section>
                         <div className="flex justify-between items-center mb-4">
                             <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest">Notas Fijadas</h3>
