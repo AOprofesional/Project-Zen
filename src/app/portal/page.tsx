@@ -138,19 +138,44 @@ export default function ClientPortalPage() {
 
             {/* Status Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                {/* 1. Acciones Requeridas (Admin needs something) */}
+                <Card className={`flex flex-col gap-4 group transition-all ${hasPendingActions ? 'border-amber-500/30 bg-amber-500/5 ring-1 ring-amber-500/10' : ''}`}>
+                    <div className={`p-3 w-fit rounded-lg ${hasPendingActions ? 'bg-amber-500/10 text-amber-500' : 'bg-white/10 text-gray-400'}`}>
+                        <AlertCircle size={24} />
+                    </div>
+                    <div>
+                        <h3 className="font-bold text-lg">Acciones Requeridas</h3>
+                        <p className="text-sm text-gray-400">
+                            {hasPendingActions
+                                ? `${pendingActions.length} pendientes de tu parte`
+                                : 'No hay acciones pendientes'}
+                        </p>
+                    </div>
+                    {hasPendingActions && (
+                        <button
+                            onClick={() => router.push(`/portal/actions?project=${project.id}`)}
+                            className="mt-auto text-xs font-bold text-amber-500 hover:text-amber-400 flex items-center gap-1 transition-colors group"
+                        >
+                            Ver pendientes <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
+                        </button>
+                    )}
+                </Card>
+
+                {/* 2. ¿Necesitas algo? (Client needs something) */}
                 <Card className="flex flex-col gap-4 border-blue-500/20 bg-blue-500/5 group cursor-pointer hover:bg-blue-500/10 transition-all" onClick={() => router.push(`/portal/actions?project=${project.id}`)}>
                     <div className="p-3 bg-blue-500/10 w-fit rounded-lg text-blue-400 group-hover:scale-110 transition-transform">
                         <MessageSquare size={24} />
                     </div>
                     <div>
-                        <h3 className="font-bold text-lg">¿Necesitas algo?</h3>
+                        <h3 className="font-bold text-lg text-white">¿Necesitas algo?</h3>
                         <p className="text-sm text-gray-400">Envía una solicitud al equipo.</p>
                     </div>
                     <div className="mt-auto text-xs font-bold text-blue-400 flex items-center gap-1">
-                        Nueva Solicitud <ArrowRight size={12} className="group-hover:translate-x-1 transition-transform" />
+                        Nueva Solicitud <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
                     </div>
                 </Card>
 
+                {/* 3. Progress */}
                 <Card className="flex flex-col gap-4 border-emerald-500/20 bg-emerald-500/5">
                     <div className="p-3 bg-emerald-500/10 w-fit rounded-lg text-emerald-400">
                         <CheckCircle size={24} />
@@ -167,7 +192,8 @@ export default function ClientPortalPage() {
                     </div>
                 </Card>
 
-                <Card className="flex flex-col gap-4">
+                {/* 4. Next Milestone */}
+                <Card className="flex flex-col gap-4 border-white/5 bg-white/[0.02]">
                     <div className="p-3 bg-white/10 w-fit rounded-lg text-white">
                         <Clock size={24} />
                     </div>
@@ -180,90 +206,11 @@ export default function ClientPortalPage() {
                         </p>
                     </div>
                 </Card>
-
-                <Card className="flex flex-col gap-4">
-                    <div className={`p-3 w-fit rounded-lg ${hasPendingActions ? 'bg-amber-500/10 text-amber-500' : 'bg-white/10 text-gray-400'}`}>
-                        <AlertCircle size={24} />
-                    </div>
-                    <div>
-                        <h3 className="font-bold text-lg">Acciones Requeridas</h3>
-                        <p className="text-sm text-gray-400">
-                            {hasPendingActions
-                                ? `${pendingActions.length} pendientes de tu parte`
-                                : 'No hay acciones pendientes'}
-                        </p>
-                    </div>
-                    {hasPendingActions && (
-                        <button
-                            onClick={() => router.push(`/portal/actions?project=${project.id}`)}
-                            className="mt-auto text-xs font-medium text-amber-500 hover:text-amber-400 flex items-center gap-1 transition-colors"
-                        >
-                            Ver pendientes <ExternalLink size={12} />
-                        </button>
-                    )}
-                </Card>
-
-                <Card className="flex flex-col gap-4">
-                    <div className="p-3 bg-blue-500/10 w-fit rounded-lg text-blue-400">
-                        <FileText size={24} />
-                    </div>
-                    <div>
-                        <h3 className="font-bold text-lg">Recursos</h3>
-                        <p className="text-sm text-gray-400">{resources.length} Archivos disponibles</p>
-                    </div>
-                </Card>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
-                {/* Left: Tasks */}
-                <div className="lg:col-span-2">
-                    <ClientTaskView tasks={tasks} onTasksChange={() => loadProjectData(selectedProjectId!)} />
-                </div>
-
-                {/* Right: Resources */}
-                <div className="space-y-8">
-                    <div>
-                        <h3 className="text-lg font-bold text-gray-300 mb-4 flex items-center gap-2">
-                            <CheckCircle size={18} className="text-emerald-500" /> Entregables
-                        </h3>
-                        <div className="space-y-3">
-                            {deliverables.length === 0 && <p className="text-sm text-gray-600 italic">No hay entregables listos.</p>}
-                            {deliverables.map(r => (
-                                <Card key={r.id} className="p-3 bg-emerald-900/10 border-emerald-500/20 hover:bg-emerald-900/20 transition-colors">
-                                    <div className="flex justify-between items-center">
-                                        <p className="font-medium text-emerald-100 text-sm">{r.title}</p>
-                                        {r.url && (
-                                            <a href={r.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-[10px] bg-emerald-500/20 text-emerald-400 px-2 py-1 rounded hover:bg-emerald-500/30 transition-colors">
-                                                <ExternalLink size={12} /> Abrir
-                                            </a>
-                                        )}
-                                    </div>
-                                </Card>
-                            ))}
-                        </div>
-                    </div>
-
-                    <div>
-                        <h3 className="text-lg font-bold text-gray-300 mb-4 flex items-center gap-2">
-                            <FileText size={18} className="text-blue-500" /> Documentación
-                        </h3>
-                        <div className="space-y-3">
-                            {documents.length === 0 && <p className="text-sm text-gray-600 italic">No hay documentos compartidos.</p>}
-                            {documents.map(r => (
-                                <Card key={r.id} className="p-3 bg-blue-900/10 border-blue-500/20 hover:bg-blue-900/20 transition-colors">
-                                    <div className="flex justify-between items-center">
-                                        <p className="font-medium text-blue-100 text-sm">{r.title}</p>
-                                        {r.url && (
-                                            <a href={r.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-[10px] bg-blue-500/20 text-blue-400 px-2 py-1 rounded hover:bg-blue-500/30 transition-colors">
-                                                <ExternalLink size={12} /> Abrir
-                                            </a>
-                                        )}
-                                    </div>
-                                </Card>
-                            ))}
-                        </div>
-                    </div>
-                </div>
+            <div className="animate-in slide-in-from-bottom duration-700">
+                {/* Tasks Only */}
+                <ClientTaskView tasks={tasks} onTasksChange={() => loadProjectData(selectedProjectId!)} />
             </div>
         </div>
     );

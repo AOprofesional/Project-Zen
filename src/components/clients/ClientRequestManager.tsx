@@ -5,8 +5,8 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Badge } from '@/components/ui/Badge';
-import { Plus, MessageSquare, X, Send, Loader2, CheckCircle2, Clock, AlertCircle } from 'lucide-react';
-import { getClientRequests, createClientRequest } from '@/services/clientRequests';
+import { Plus, MessageSquare, X, Send, Loader2, CheckCircle2, Clock, AlertCircle, Pencil, Trash2 } from 'lucide-react';
+import { getClientRequests, createClientRequest, updateClientRequest, deleteClientRequest } from '@/services/clientRequests';
 import { ClientRequest } from '@/types';
 
 export function ClientRequestManager({ projectId }: { projectId: string }) {
@@ -15,6 +15,8 @@ export function ClientRequestManager({ projectId }: { projectId: string }) {
     const [isCreating, setIsCreating] = useState(false);
     const [formData, setFormData] = useState({ title: '', description: '' });
     const [submitting, setSubmitting] = useState(false);
+    const [editingId, setEditingId] = useState<string | null>(null);
+    const [editFormData, setEditFormData] = useState({ title: '', description: '' });
 
     const loadRequests = async () => {
         setLoading(true);
@@ -40,6 +42,35 @@ export function ClientRequestManager({ projectId }: { projectId: string }) {
             await loadRequests();
         } catch (e) {
             console.error("Error creating request", e);
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
+    const handleDelete = async (requestId: string) => {
+        if (!confirm('¿Estás seguro de que quieres eliminar esta solicitud?')) return;
+        try {
+            await deleteClientRequest(requestId);
+            await loadRequests();
+        } catch (e) {
+            console.error("Error deleting request", e);
+        }
+    };
+
+    const startEdit = (request: ClientRequest) => {
+        setEditingId(request.id);
+        setEditFormData({ title: request.title, description: request.description || '' });
+    };
+
+    const handleUpdate = async (requestId: string) => {
+        if (!editFormData.title.trim()) return;
+        setSubmitting(true);
+        try {
+            await updateClientRequest(requestId, editFormData);
+            setEditingId(null);
+            await loadRequests();
+        } catch (e) {
+            console.error("Error updating request", e);
         } finally {
             setSubmitting(false);
         }
@@ -126,7 +157,49 @@ export function ClientRequestManager({ projectId }: { projectId: string }) {
                                         </div>
                                     )}
                                 </div>
+
+                                <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    {request.status === 'PENDING' && (
+                                        <button
+                                            onClick={() => startEdit(request)}
+                                            className="p-1.5 text-gray-400 hover:text-blue-400 hover:bg-blue-500/10 rounded-md transition-all"
+                                            title="Editar solicitud"
+                                        >
+                                            <Pencil size={14} />
+                                        </button>
+                                    )}
+                                    <button
+                                        onClick={() => handleDelete(request.id)}
+                                        className="p-1.5 text-gray-400 hover:text-red-400 hover:bg-red-500/10 rounded-md transition-all"
+                                        title="Borrar solicitud"
+                                    >
+                                        <Trash2 size={14} />
+                                    </button>
+                                </div>
                             </div>
+
+                            {editingId === request.id && (
+                                <div className="mt-4 p-4 bg-white/[0.02] border-t border-white/5 space-y-4 animate-in slide-in-from-top-2 duration-300">
+                                    <Input
+                                        value={editFormData.title}
+                                        onChange={e => setEditFormData({ ...editFormData, title: e.target.value })}
+                                        className="bg-black/40 border-white/10"
+                                    />
+                                    <textarea
+                                        value={editFormData.description}
+                                        onChange={e => setEditFormData({ ...editFormData, description: e.target.value })}
+                                        className="w-full bg-black/40 border border-white/10 rounded-lg p-3 text-sm min-h-[80px] text-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all"
+                                    />
+                                    <div className="flex gap-2">
+                                        <Button onClick={() => handleUpdate(request.id)} size="sm" className="flex-1 bg-blue-600 hover:bg-blue-500" isLoading={submitting}>
+                                            Guardar Cambios
+                                        </Button>
+                                        <Button onClick={() => setEditingId(null)} size="sm" variant="outline" className="flex-1 border-white/10">
+                                            Cancelar
+                                        </Button>
+                                    </div>
+                                </div>
+                            )}
                         </Card>
                     ))
                 )}
