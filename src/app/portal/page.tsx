@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
-import { CheckCircle, Clock, FileText, ExternalLink, Loader2, LayoutGrid, AlertCircle, MessageSquare, ArrowRight } from 'lucide-react';
+import { CheckCircle, Clock, FileText, ExternalLink, Loader2, LayoutGrid, AlertCircle, MessageSquare, ArrowRight, ArrowDown } from 'lucide-react';
 import { getClientPortalData, getClientProjects, PortalData } from '@/services/portal';
 import { ClientTaskView } from '@/components/portal/ClientTaskView';
 import { Project } from '@/types';
@@ -206,11 +206,75 @@ export default function ClientPortalPage() {
                         </p>
                     </div>
                 </Card>
+
+                {/* 5. Resources Shortcut */}
+                <Card className="flex flex-col gap-4 border-white/5 bg-white/[0.02] hover:bg-white/[0.04] transition-colors cursor-pointer" onClick={() => {
+                    const el = document.getElementById('resources-section');
+                    el?.scrollIntoView({ behavior: 'smooth' });
+                }}>
+                    <div className="p-3 bg-blue-500/10 w-fit rounded-lg text-blue-400">
+                        <FileText size={24} />
+                    </div>
+                    <div>
+                        <h3 className="font-bold text-lg">Recursos</h3>
+                        <p className="text-sm text-gray-400">{resources.length} Archivos disponibles</p>
+                    </div>
+                    <div className="mt-auto text-xs font-bold text-blue-400 flex items-center gap-1">
+                        Ver archivos <ArrowDown size={12} />
+                    </div>
+                </Card>
             </div>
 
-            <div className="animate-in slide-in-from-bottom duration-700">
-                {/* Tasks Only */}
-                <ClientTaskView tasks={tasks} onTasksChange={() => loadProjectData(selectedProjectId!)} />
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 animate-in slide-in-from-bottom duration-700">
+                {/* Left: Tasks */}
+                <div className="lg:col-span-2">
+                    <ClientTaskView tasks={tasks} onTasksChange={() => loadProjectData(selectedProjectId!)} />
+                </div>
+
+                {/* Right: Resources Section */}
+                <div id="resources-section" className="space-y-8 scroll-mt-24">
+                    <div>
+                        <h3 className="text-lg font-bold text-gray-300 mb-4 flex items-center gap-2">
+                            <CheckCircle size={18} className="text-emerald-500" /> Entregables
+                        </h3>
+                        <div className="space-y-3">
+                            {deliverables.length === 0 && <p className="text-sm text-gray-600 italic">No hay entregables listos.</p>}
+                            {deliverables.map(r => (
+                                <Card key={r.id} className="p-3 bg-emerald-900/10 border-emerald-500/20 hover:bg-emerald-900/20 transition-colors">
+                                    <div className="flex justify-between items-center">
+                                        <p className="font-medium text-emerald-100 text-sm">{r.title}</p>
+                                        {r.url && (
+                                            <a href={r.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-[10px] bg-emerald-500/20 text-emerald-400 px-2 py-1 rounded hover:bg-emerald-500/30 transition-colors">
+                                                <ExternalLink size={12} /> Abrir
+                                            </a>
+                                        )}
+                                    </div>
+                                </Card>
+                            ))}
+                        </div>
+                    </div>
+
+                    <div>
+                        <h3 className="text-lg font-bold text-gray-300 mb-4 flex items-center gap-2">
+                            <FileText size={18} className="text-blue-500" /> Documentación
+                        </h3>
+                        <div className="space-y-3">
+                            {documents.length === 0 && <p className="text-sm text-gray-600 italic">No hay documentos compartidos.</p>}
+                            {documents.map(r => (
+                                <Card key={r.id} className="p-3 bg-blue-900/10 border-blue-500/20 hover:bg-blue-900/20 transition-colors">
+                                    <div className="flex justify-between items-center">
+                                        <p className="font-medium text-blue-100 text-sm">{r.title}</p>
+                                        {r.url && (
+                                            <a href={r.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-[10px] bg-blue-500/20 text-blue-400 px-2 py-1 rounded hover:bg-blue-500/30 transition-colors">
+                                                <ExternalLink size={12} /> Abrir
+                                            </a>
+                                        )}
+                                    </div>
+                                </Card>
+                            ))}
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     );
