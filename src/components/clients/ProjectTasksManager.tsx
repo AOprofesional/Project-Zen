@@ -20,10 +20,26 @@ export function ProjectTasksManager({ projectId }: ProjectTasksManagerProps) {
     const [loading, setLoading] = useState(false);
     const [selectedTask, setSelectedTask] = useState<Todo | null>(null);
 
+    const sortTasks = (taskList: Todo[]) => {
+        return [...taskList].sort((a, b) => {
+            const statusOrder = { 'PENDING': 0, 'IN_PROGRESS': 0, 'COMPLETED': 1 };
+            const aOrder = statusOrder[a.status] ?? 0;
+            const bOrder = statusOrder[b.status] ?? 0;
+
+            if (aOrder !== bOrder) return aOrder - bOrder;
+
+            // Secondary sort: order_index (assuming ascending)
+            if (a.order_index !== b.order_index) return a.order_index - b.order_index;
+
+            // Tertiary sort: created_at (descending - newer first)
+            return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+        });
+    };
+
     const fetchTasks = async () => {
         const all = await getAllTasks();
         const projectTasks = all.filter(t => t.project_id === projectId);
-        setTasks(projectTasks);
+        setTasks(sortTasks(projectTasks));
     };
 
     useEffect(() => {
@@ -54,10 +70,11 @@ export function ProjectTasksManager({ projectId }: ProjectTasksManagerProps) {
     };
 
     const cycleStatus = async (task: Todo) => {
-        const nextStatus = task.status === 'PENDING' ? 'IN_PROGRESS' : task.status === 'IN_PROGRESS' ? 'COMPLETED' : 'PENDING';
+        const nextStatus: 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' = task.status === 'PENDING' ? 'IN_PROGRESS' : task.status === 'IN_PROGRESS' ? 'COMPLETED' : 'PENDING';
 
         // Optimistic
-        setTasks(tasks.map(t => t.id === task.id ? { ...t, status: nextStatus, is_completed: nextStatus === 'COMPLETED' } : t));
+        const updatedTasks = tasks.map(t => t.id === task.id ? { ...t, status: nextStatus, is_completed: nextStatus === 'COMPLETED' } : t);
+        setTasks(sortTasks(updatedTasks));
 
         await updateTask(task.id, {
             status: nextStatus,
